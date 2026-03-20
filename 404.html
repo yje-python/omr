@@ -1,6 +1,11 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <meta http-equiv="refresh" content="0; url=/" />
+    <meta charset="utf-8" />
+    <script>
+      const repo = '/omr'
+      const path = window.location.pathname.replace(repo, '')
+      window.location.replace(repo + '/#' + path)
+    </script>
   </head>
 </html>
