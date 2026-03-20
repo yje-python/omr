@@ -4,7 +4,14 @@
     <meta charset="utf-8" />
     <script>
       const repo = '/omr'
-      const path = window.location.pathname.replace(repo, '')
+
+      const fullPath =
+        window.location.pathname +
+        window.location.search +
+        window.location.hash
+
+      const path = fullPath.replace(repo, '')
+
       window.location.replace(repo + '/#' + path)
     </script>
   </head>
