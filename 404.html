@@ -3,16 +3,15 @@
   <head>
     <meta charset="utf-8" />
     <script>
-      const repo = '/omr'
+      var repo = '/omr';
 
-      const fullPath =
-        window.location.pathname +
-        window.location.search +
-        window.location.hash
+      var l = window.location;
+      var path = l.pathname.slice(repo.length);
 
-      const path = fullPath.replace(repo, '')
+      // query, hash까지 포함
+      var redirect = repo + '/#' + path + l.search + l.hash;
 
-      window.location.replace(repo + '/#' + path)
+      window.location.replace(redirect);
     </script>
   </head>
 </html>
