@@ -12,7 +12,7 @@ import CreateExamView from '@/views/CreateExamView.vue'
 
 
 const router = createRouter({
-  history: createWebHistory(),
+  history: createWebHistory('/omr/'),
   routes: [
     { path: '/', component: StartView }, // 시작 페이지
     { path: '/exam', component: ExamView },
