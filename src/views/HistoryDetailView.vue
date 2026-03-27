@@ -19,6 +19,10 @@
       <button @click="applyCompare">비교하기</button>
     </div>
 
+    <h3 class="exam-name">
+      {{ exam.examName }}
+    </h3>
+
     <!-- 🔹 과목 선택 -->
     <div class="tabs">
       <button
@@ -36,6 +40,9 @@
 
       <!-- 현재 시험 -->
       <div class="card">
+          <h4 class="card-title">
+            {{ exam.examName }}
+          </h4>
         <div>점수: {{ currentSubject.score }} / {{ currentSubject.answers.length }}</div>
         <div>정답: {{ stats.correct }}</div>
         <div>오답: {{ stats.wrong }}</div>
@@ -68,7 +75,9 @@
 
       <!-- 🔥 비교 시험 (선택했을 때만) -->
       <div v-if="isCompare && compareSubject" class="card">
-
+          <h4 class="card-title">
+            {{ compareExam?.examName }}
+          </h4>
         <div>점수: {{ compareSubject.score }} / {{ compareSubject.answers.length }}</div>
         <div>정답: {{ compareStats.correct }}</div>
         <div>오답: {{ compareStats.wrong }}</div>
@@ -166,7 +175,7 @@ const sameExams = computed(() => {
 
   return store.exams.filter(
     e =>
-      e.templateId === exam.value.templateId &&
+      // e.templateId === exam.value.templateId &&
       e.examId !== exam.value.examId
   )
 })
@@ -310,6 +319,13 @@ const goBack = () => router.push('/history')
   margin-bottom: 20px;
 }
 
+.exam-name {
+  text-align: center;
+  font-size: 18px;   /* title보다 살짝 작게 */
+  margin-bottom: 15px;
+  font-weight: 500;
+}
+
 /* 🔹 비교 영역 */
 .compare-box {
   display: flex;
@@ -355,6 +371,15 @@ const goBack = () => router.push('/history')
   border: 1px solid #ddd;
   padding: 20px;
   background: white;
+}
+
+.card-title {
+  text-align: center;
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #eee;
 }
 
 /* 🔹 요약 (기존 유지) */

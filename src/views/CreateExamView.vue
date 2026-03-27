@@ -197,7 +197,7 @@ const startExam = () => {
     return
   }
 
-  store.createExam(examName.value)
+  store.createExam(examName.value, selectedTemplateId.value || null)
 
   subjects.value.forEach(s => {
     store.addSubject(s.name, s.questionCount, s.timeLimit)

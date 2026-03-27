@@ -41,13 +41,13 @@ export const useOmrStore = defineStore('omr', {
     },
 
     // 🔹 시험 생성
-    createExam(name: string, templateId?: string) {
+    createExam(name: string, templateId?: number | null) {
       const exam = {
         examId: Date.now().toString(),
         examName: name,
         createdAt: new Date().toISOString(),
 
-        templateId: templateId || name, // 🔥 같은 시험 묶는 기준
+        templateId: templateId ?? null, // 🔥 같은 시험 묶는 기준
 
         subjects: [],
       }

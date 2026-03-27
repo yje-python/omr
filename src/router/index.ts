@@ -1,4 +1,4 @@
-import { createRouter, createWebHistory } from 'vue-router'
+import { createRouter, createWebHashHistory } from 'vue-router'
 
 import StartView from '@/views/StartView.vue'
 import ExamView from '@/views/ExamView.vue'
@@ -12,7 +12,7 @@ import CreateExamView from '@/views/CreateExamView.vue'
 
 
 const router = createRouter({
-  history: createWebHistory('/omr/'),
+  history: createWebHashHistory('/omr/'),
   routes: [
     { path: '/', component: StartView }, // 시작 페이지
     { path: '/exam', component: ExamView },
