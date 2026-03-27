@@ -7,6 +7,7 @@
         v-for="exam in pagedExams"
         :key="exam.examId"
         class="card"
+        :style="{ borderLeft: `60px solid ${getTemplateColor(exam.templateId)}` }"
       >
         <div class="card-content" @click="goDetail(exam.examId)">
           <div class="exam-name">{{ exam.examName }}</div>
@@ -95,6 +96,27 @@ const formatDate = (date: string) => {
   return new Date(date).toLocaleString()
 }
 
+const colorPalette = [
+  '#E3F2FD', // 블루
+  '#FCE4EC', // 핑크
+  '#E8F5E9', // 그린
+  '#FFF3E0', // 오렌지
+  '#F3E5F5', // 퍼플
+  '#E0F2F1', // 민트
+]
+
+const getTemplateColor = (templateId: number | null) => {
+  if (!templateId) return '#F5F5F5'
+
+  const ids = [
+    ...new Set(store.exams.map(e => e.templateId).filter(Boolean))
+  ]
+
+  const index = ids.indexOf(templateId)
+
+  return colorPalette[index % colorPalette.length]
+}
+
 const goHome = () => {
   router.push('/')
 }
@@ -118,6 +140,8 @@ const goHome = () => {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  border-radius: 10px;
+  transition: all 0.2s ease;
 }
 
 .card-content {
@@ -126,7 +150,8 @@ const goHome = () => {
 }
 
 .card:hover {
-  background: #f8f8f8;
+  transform: translateY(-2px);
+  filter: brightness(0.97);
 }
 
 .exam-name {

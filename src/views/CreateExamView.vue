@@ -1,7 +1,10 @@
 <template>
   <div class="container">
     <div class="content">
-      <h1 class="title">시험 생성</h1>
+      <div class="header">
+        <button class="back-btn" @click="goBack">← 뒤로가기</button>
+        <h1 class="title">시험 생성</h1>
+      </div>
 
       <!-- 🔹 템플릿 선택 -->
       <div class="form-group">
@@ -76,6 +79,10 @@ import { useOmrStore } from '@/stores/omr'
 const router = useRouter()
 const store = useOmrStore()
 
+const goBack = () => {
+  router.back()
+}
+
 const examName = ref('')
 
 const subjects = ref<{
@@ -85,8 +92,8 @@ const subjects = ref<{
 }[]>([])
 
 const newSubject = ref('')
-const newQuestionCount = ref(20)
-const newTimeLimit = ref(30)
+const newQuestionCount = ref<number | null>(null)
+const newTimeLimit = ref<number | null>(null)
 
 // 🔹 템플릿
 const templates = ref<any[]>([])
@@ -169,7 +176,11 @@ const deleteTemplate = () => {
 
 // 🔹 과목 추가
 const addSubject = () => {
-  if (!newSubject.value.trim()) return
+  if (
+    !newSubject.value.trim() ||
+    !newQuestionCount.value ||
+    !newTimeLimit.value
+  ) return
 
   subjects.value.push({
     name: newSubject.value.trim(),
@@ -178,6 +189,8 @@ const addSubject = () => {
   })
 
   newSubject.value = ''
+  newQuestionCount.value = null
+  newTimeLimit.value = null
 }
 
 // 🔹 과목 삭제
@@ -212,22 +225,45 @@ onMounted(() => {
 </script>
 
 <style scoped>
+
+.header {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 30px;
+}
+
+.title {
+  margin: 0;
+  text-align: center;
+}
+
+.back-btn {
+  position: absolute;
+  left: 0;
+  padding: 6px 10px;
+}
 .container {
   height: 100vh;
   position: relative;
+
 }
 
 .content {
   position: absolute;
-  top: 30%;
+  top: 40%;
   left: 50%;
   transform: translate(-50%, -50%);
   width: 420px;
+  border: 2px solid black;
+  padding: 10px;
+  /* background-color: aliceblue; */
 }
 
 .title {
   text-align: center;
-  margin-bottom: 30px;
+
 }
 
 .form-group {
@@ -259,10 +295,23 @@ select {
 .subject-input {
   display: flex;
   gap: 5px;
+  width: 100%;
+}
+
+.subject-input * {
+  box-sizing: border-box;
 }
 
 .subject-input input {
   flex: 1;
+}
+.subject-input input[type="number"] {
+  width: 70px;
+}
+
+.subject-input input[type="text"] {
+  flex: 1;
+  min-width: 0;
 }
 
 .subject-list {
