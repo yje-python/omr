@@ -7,11 +7,11 @@
     <div class="tabs">
       <button
         v-for="(s, i) in exam.subjects"
-        :key="s.subjectId"
+        :key="i"
         :class="{ active: currentIndex === i }"
         @click="currentIndex = Number(i)"
       >
-        {{ s.subjectName }}
+        {{ s.subject_name }}
       </button>
     </div>
 
@@ -20,13 +20,14 @@
 
       <!-- 시험 정보 -->
       <div class="info">
-        <div>시험명: {{ exam.examName }}</div>
-        <div>응시시간: {{ formatDate(exam.createdAt) }}</div>
+        <div>시험명: {{ exam.exam_name }}</div>
+        <div>응시시간: {{ formatDate(exam.created_at) }}</div>
       </div>
 
       <!-- 통계 -->
       <div class="summary">
-        <div>점수: {{ currentSubject.score }} / {{ currentSubject.answers.length }}</div>
+        <div>점수: {{ stats.correct }} / {{ currentSubject.answers.length }}</div>
+        <div>푼 문제: {{ stats.solved }}</div>
         <div>정답: {{ stats.correct }}</div>
         <div>오답: {{ stats.wrong }}</div>
         <div>미응답: {{ stats.unanswered }}</div>
@@ -56,27 +57,39 @@
 
       <div v-if="showWrong" class="wrong-list">
 
-        <!-- 헤더 -->
         <div class="wrong-header">
           <span class="chip header-chip">번호</span>
           <span class="chip header-chip">내 답</span>
           <span class="chip header-chip">정답</span>
+          <span class="chip header-chip">저장</span>
         </div>
 
-        <!-- 데이터 -->
         <div
-          v-for="item in wrongDetail"
-          :key="item.index"
+          v-for="(a, i) in currentSubject.answers"
+          :key="i"
           class="wrong-item"
         >
-          <span class="chip number-chip">{{ item.index }}</span>
-          <span class="chip my-answer">{{ item.my }}</span>
-          <span class="chip correct-answer">{{ item.correct }}</span>
+          <span class="chip number-chip">{{ Number(i) + 1 }}</span>
+
+          <span class="chip my-answer">
+            {{ a.user_answer ?? '-' }}
+          </span>
+
+          <span class="chip correct-answer">
+            {{ a.correct_answer }}
+          </span>
+
+          <!-- 🔥 여기 넣어야 함 -->
+          <button
+            v-if="a.user_answer && a.user_answer !== a.correct_answer"
+            @click="saveWrongNote(currentSubject.id, Number(i), a)"
+          >
+            저장
+          </button>
         </div>
       </div>
 
     </div>
-
     <button class="home-btn" @click="goHome">홈으로</button>
   </div>
 
@@ -86,17 +99,26 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { computed, ref, onMounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { useOmrStore } from '@/stores/omr'
+import { createWrongNote } from '@/api/exam'
 
 const store = useOmrStore()
 const router = useRouter()
+const route = useRoute()
 
-const exam = computed(() => store.getCurrentExam())
+const exam = computed(() => store.currentExam)
 
 const currentIndex = ref(0)
 const showWrong = ref(false)
+
+onMounted(async () => {
+  const id = route.params.id
+  if (id) {
+    await store.fetchExamFromServer(Number(id))
+  }
+})
 
 const currentSubject = computed(() => {
   if (!exam.value) return null
@@ -110,28 +132,28 @@ const stats = computed(() => {
   let wrong = 0
   let unanswered = 0
 
-  currentSubject.value.answers.forEach((ans: number, i: number) => {
-    const c = currentSubject.value.correctAnswers[i]
-
-    if (!ans) unanswered++
-    else if (ans === c) correct++
+  currentSubject.value.answers.forEach((a: any) => {
+    if (a.user_answer == null) unanswered++
+    else if (a.user_answer === a.correct_answer) correct++
     else wrong++
   })
+
+  const solved = correct + wrong
 
   return {
     correct,
     wrong,
     unanswered,
-    accuracy: ((correct / currentSubject.value.answers.length) * 100).toFixed(1)
+    solved,
+    accuracy: solved === 0 ? '0.0' : ((correct / solved) * 100).toFixed(1)
   }
 })
 
 const wrongNumbers = computed(() => {
   if (!currentSubject.value) return []
   return currentSubject.value.answers
-    .map((ans: number, i: number) => {
-      const c = currentSubject.value.correctAnswers[i]
-      if (ans && ans !== c) return i + 1
+    .map((a: any, i: number) => {
+      if (a.user_answer && a.user_answer !== a.correct_answer) return i + 1
       return null
     })
     .filter(Boolean)
@@ -140,22 +162,33 @@ const wrongNumbers = computed(() => {
 const unansweredNumbers = computed(() => {
   if (!currentSubject.value) return []
   return currentSubject.value.answers
-    .map((ans: number, i: number) => (!ans ? i + 1 : null))
+    .map((a: any, i: number) => (!a.user_answer ? i + 1 : null))
     .filter(Boolean)
 })
 
 const wrongDetail = computed(() => {
   if (!currentSubject.value) return []
   return currentSubject.value.answers
-    .map((ans: number, i: number) => {
-      const c = currentSubject.value.correctAnswers[i]
-      if (ans && ans !== c) {
-        return { index: i + 1, my: ans, correct: c }
+    .map((a: any, i: number) => {
+      if (a.user_answer && a.user_answer !== a.correct_answer) {
+        return { index: i + 1, my: a.user_answer, correct: a.correct_answer }
       }
       return null
     })
     .filter(Boolean)
 })
+
+const saveWrongNote = async (subjectId: number, index: number, a: any) => {
+  await createWrongNote({
+    subject_id: subjectId,
+    question_number: index + 1,
+    user_answer: a.user_answer,
+    correct_answer: a.correct_answer,
+    memo: ''
+  })
+
+  alert('오답노트 저장 완료')
+}
 
 const formatDate = (date: string) => {
   return new Date(date).toLocaleString()

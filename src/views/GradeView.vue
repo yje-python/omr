@@ -63,13 +63,19 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useOmrStore } from '@/stores/omr'
+import axios from '@/api/api'
 
 const store = useOmrStore()
 const router = useRouter()
 
 const exam = store.getCurrentExam()
+onMounted(() => {
+  if (!exam) {
+    alert('시험 데이터가 없습니다')
+    router.push('/')
+  }
+})
 
-// 🔹 현재 위치 (과목 + 인덱스)
 const currentSubjectIndex = ref(0)
 const currentIndex = ref(0)
 
@@ -79,33 +85,26 @@ onMounted(() => {
   tableRef.value?.focus()
 })
 
-// 🔹 행 계산
 const getRows = (total) => Math.ceil(total / 5)
 
-// 🔹 index 계산
 const getIndex = (row, col) => {
   return (row - 1) * 5 + (col - 1)
 }
 
-// 🔹 위치 설정
 const setCurrent = (sIndex, index) => {
   currentSubjectIndex.value = sIndex
   currentIndex.value = index
 }
 
-// 🔹 키보드 입력
 const handleKeydown = (e) => {
   const key = e.key
   const subject = exam.subjects[currentSubjectIndex.value]
 
-  // 숫자 입력
   if (/^[1-5]$/.test(key)) {
     subject.correctAnswers[currentIndex.value] = Number(key)
-
     moveNext()
   }
 
-  // 삭제
   if (key === 'Backspace') {
     subject.correctAnswers[currentIndex.value] = null
 
@@ -114,7 +113,6 @@ const handleKeydown = (e) => {
     }
   }
 
-  // 방향키
   if (key === 'ArrowRight' && currentIndex.value < subject.correctAnswers.length - 1) {
     currentIndex.value++
   }
@@ -132,14 +130,12 @@ const handleKeydown = (e) => {
   }
 }
 
-// 🔹 다음 칸 이동 (과목 넘어가기 포함)
 const moveNext = () => {
   const subject = exam.subjects[currentSubjectIndex.value]
 
   if (currentIndex.value < subject.correctAnswers.length - 1) {
     currentIndex.value++
   } else {
-    // 다음 과목
     if (currentSubjectIndex.value < exam.subjects.length - 1) {
       currentSubjectIndex.value++
       currentIndex.value = 0
@@ -147,8 +143,9 @@ const moveNext = () => {
   }
 }
 
-// 🔹 채점
-const finishGrading = () => {
+// 🔥 핵심 수정
+const finishGrading = async () => {
+  // 점수 계산
   exam.subjects.forEach(subject => {
     let correct = 0
 
@@ -159,14 +156,97 @@ const finishGrading = () => {
     subject.score = correct
   })
 
-  store.saveToStorage() // 🔥 중요 (결과 저장)
+  // 시험 저장 (여기서 WrongNote 자동 생성됨)
+  const savedExam = await store.saveExamToServer()
 
-  router.push('/result')
+  // 이동
+  router.push(`/history/${savedExam.id}`)
 }
 
 const formatNumber = (n) =>
   n.toString().padStart(2, '0')
 </script>
+
+<style scoped>
+.page {
+  padding-top: 40px;
+}
+
+.header {
+  position: fixed;
+  top: 0;
+  width: 100%;
+  height: 40px;
+  background: white;
+
+  display: flex;
+  align-items: center;
+  padding-left: 20px;
+  z-index: 1000;
+}
+
+.submit {
+  padding: 6px 12px;
+  font-size: 14px;
+}
+
+.wrapper {
+  width: fit-content;
+  margin: 0 auto;
+}
+
+.table {
+  width: fit-content;
+  border: 1px solid #ccc;
+  display: inline-block;
+  outline: none;
+}
+
+.subject-block {
+  margin-bottom: 30px;
+}
+
+.subject-title {
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+}
+
+.even {
+  background: #fbf8f3;
+}
+
+.cell-group {
+  display: flex;
+  border: 1px solid #ddd;
+  height: 40px;
+}
+
+.number {
+  width: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  border-right: 1px solid #ddd;
+}
+
+.answer-cell {
+  width: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.answer-cell.active {
+  border: 2px solid #42b883;
+}
+</style>
 
 <style scoped>
 .page {

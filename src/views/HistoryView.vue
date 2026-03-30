@@ -4,17 +4,17 @@
 
     <div v-if="pagedExams.length > 0">
       <div
-        v-for="exam in pagedExams"
-        :key="exam.examId"
+        v-for="(exam, index) in pagedExams"
+        :key="exam.id"
         class="card"
-        :style="{ borderLeft: `60px solid ${getTemplateColor(exam.templateId)}` }"
+        :style="{ borderLeft: `60px solid ${getTemplateColor(exam.template_id)}` }"
       >
-        <div class="card-content" @click="goDetail(exam.examId)">
-          <div class="exam-name">{{ exam.examName }}</div>
-          <div class="date">{{ formatDate(exam.createdAt) }}</div>
+        <div class="card-content" @click="goDetail(exam.id)">
+          <div class="exam-name">{{ exam.exam_name }}</div>
+          <div class="date">{{ formatDate(exam.created_at) }}</div>
         </div>
 
-        <button class="delete-btn" @click="deleteExam(exam.examId)">
+        <button class="delete-btn" @click="deleteExamHandler(exam.id)">
           삭제
         </button>
       </div>
@@ -42,12 +42,16 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useOmrStore } from '@/stores/omr'
-
+import { deleteExam } from '@/api/exam'
 const store = useOmrStore()
 const router = useRouter()
+
+onMounted(async () => {
+  await store.fetchExamsFromServer()
+})
 
 // 🔹 페이지 상태
 const currentPage = ref(1)
@@ -65,18 +69,19 @@ const pagedExams = computed(() => {
 })
 
 // 🔹 상세 이동
-const goDetail = (examId: string) => {
+const goDetail = (examId: number) => {
   router.push(`/history/${examId}`)
 }
 
-// 🔹 삭제
-const deleteExam = (examId: string) => {
+// 🔹 삭제 (프론트 상태만 제거)
+const deleteExamHandler = async (examId: number) => {
   const confirmDelete = confirm('삭제하시겠습니까?')
   if (!confirmDelete) return
 
-  store.exams = store.exams.filter(e => e.examId !== examId)
+  await deleteExam(examId)
 
-  // 페이지 보정
+  store.exams = store.exams.filter(e => e.id !== examId)
+
   if (currentPage.value > totalPages.value) {
     currentPage.value = totalPages.value || 1
   }
@@ -96,25 +101,19 @@ const formatDate = (date: string) => {
   return new Date(date).toLocaleString()
 }
 
+// 🔹 색상
 const colorPalette = [
-  '#E3F2FD', // 블루
-  '#FCE4EC', // 핑크
-  '#E8F5E9', // 그린
-  '#FFF3E0', // 오렌지
-  '#F3E5F5', // 퍼플
-  '#E0F2F1', // 민트
+  '#E3F2FD',
+  '#FCE4EC',
+  '#E8F5E9',
+  '#FFF3E0',
+  '#F3E5F5',
+  '#E0F2F1',
 ]
 
-const getTemplateColor = (templateId: number | null) => {
-  if (!templateId) return '#F5F5F5'
-
-  const ids = [
-    ...new Set(store.exams.map(e => e.templateId).filter(Boolean))
-  ]
-
-  const index = ids.indexOf(templateId)
-
-  return colorPalette[index % colorPalette.length]
+const getTemplateColor = (templateId: number) => {
+  const index = Math.abs(templateId) % colorPalette.length
+  return colorPalette[index]
 }
 
 const goHome = () => {

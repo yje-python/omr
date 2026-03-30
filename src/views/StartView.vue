@@ -6,6 +6,7 @@
       <div class="buttons">
         <button @click="startExam">응시하기</button>
         <button @click="goHistory">지난 결과 확인하기</button>
+        <button @click="goWrongNote">오답노트 보기</button>
       </div>
     </div>
   </div>
@@ -24,6 +25,10 @@ const startExam = () => {
 
 const goHistory = () => {
   router.push('/history')
+}
+
+const goWrongNote = () => {
+  router.push('/wrong-note')
 }
 </script>
 

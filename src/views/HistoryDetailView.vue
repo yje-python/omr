@@ -3,142 +3,138 @@
 
     <h2 class="title">시험 상세 결과</h2>
 
-        <!-- 🔥 비교 선택 -->
-      <div class="compare-box">
-        <select v-model="selectedCompareExamId">
-          <option value="">비교할 시험 선택</option>
-          <option
-            v-for="e in sameExams"
-            :key="e.examId"
-            :value="e.examId"
-          >
-            {{ e.examName }}
-          </option>
-        </select>
+    <!-- 🔥 비교 선택 -->
+    <div class="compare-box">
+      <select v-model="selectedCompareExamId">
+        <option value="">비교할 시험 선택</option>
+        <option
+          v-for="e in sameExams"
+          :key="e.id"
+          :value="e.id"
+        >
+          {{ e.exam_name }}
+        </option>
+      </select>
 
-        <button @click="applyCompare">비교하기</button>
-      </div>
+      <button @click="applyCompare">비교하기</button>
+    </div>
 
-    <!-- 🔹 과목 선택 (그대로 유지) -->
+    <!-- 🔹 과목 선택 -->
     <div class="tabs">
       <button
         v-for="(s, i) in exam.subjects"
-        :key="s.subjectId"
+        :key="i"
         :class="{ active: currentIndex === i }"
         @click="currentIndex = Number(i)"
       >
-        {{ s.subjectName }}
+        {{ s.subject_name }}
       </button>
     </div>
 
+    <!-- 🔥 카드 영역 -->
+    <div :class="isCompare ? 'compare-wrapper' : ''">
 
+      <!-- 현재 시험 -->
+      <div class="card">
+        <h4 class="card-title">{{ exam.exam_name }}</h4>
 
-    <!-- 🔹 카드 (완전 동일) -->
-<!-- 🔥 카드 영역 -->
-<div :class="isCompare ? 'compare-wrapper' : ''">
+        <div>점수: {{ stats.correct }} / {{ currentSubject?.answers.length }}</div>
+        <div>푼 문제: {{ stats.solved }}</div>
+        <div>정답: {{ stats.correct }}</div>
+        <div>오답: {{ stats.wrong }}</div>
+        <div>미응답: {{ stats.unanswered }}</div>
+        <div>정답률: {{ stats.accuracy }}%</div>
 
-  <!-- 현재 시험 -->
-  <div class="card">
-    <h4 class="card-title">{{ exam.examName }}</h4>
+        <!-- 입력답안 -->
+        <div class="toggle" @click="showAnswer = !showAnswer">
+          입력 답안 {{ showAnswer ? '▲' : '▼' }}
+        </div>
 
-    <div>점수: {{ currentSubject.score }} / {{ currentSubject.answers.length }}</div>
-    <div>정답: {{ stats.correct }}</div>
-    <div>오답: {{ stats.wrong }}</div>
-    <div>미응답: {{ stats.unanswered }}</div>
-    <div>정답률: {{ stats.accuracy }}%</div>
+        <div v-if="showAnswer" class="wrong-list">
+          <div class="wrong-header">
+            <span class="chip header-chip">번호</span>
+            <span class="chip header-chip">내 답</span>
+            <span class="chip header-chip">정답</span>
+          </div>
 
-    <!-- 🔥 입력답안 (기존 유지 그대로) -->
-    <div class="toggle" @click="showAnswer = !showAnswer">
-      입력 답안 {{ showAnswer ? '▲' : '▼' }}
-    </div>
+          <div
+            v-for="(a, i) in currentSubject?.answers"
+            :key="i"
+            class="wrong-item"
+          >
+            <span class="chip number-chip">{{ Number(i) + 1 }}</span>
 
-    <div v-if="showAnswer" class="wrong-list">
-      <div class="wrong-header">
-        <span class="chip header-chip">번호</span>
-        <span class="chip header-chip">내 답</span>
-        <span class="chip header-chip">정답</span>
+            <span class="chip" :class="getStatus(a)">
+              {{ a.user_answer ?? '-' }}
+            </span>
+
+            <span class="chip correct-answer">
+              {{ a.correct_answer }}
+            </span>
+          </div>
+        </div>
       </div>
 
-      <div
-        v-for="(ans, i) in currentSubject.answers"
-        :key="i"
-        class="wrong-item"
-      >
-        <span class="chip number-chip">{{ Number(i) + 1 }}</span>
+      <!-- 비교 시험 -->
+      <div v-if="isCompare && compareSubject" class="card">
+        <h4 class="card-title">{{ compareExam?.exam_name }}</h4>
 
-        <span
-          class="chip"
-          :class="getStatus(ans, currentSubject.correctAnswers[i])"
-        >
-          {{ ans || '-' }}
-        </span>
+        <div>점수: {{ compareStats.correct }} / {{ compareSubject.answers.length }}</div>
+        <div>정답: {{ compareStats.correct }}</div>
+        <div>오답: {{ compareStats.wrong }}</div>
+        <div>미응답: {{ compareStats.unanswered }}</div>
+        <div>정답률: {{ compareStats.accuracy }}%</div>
 
-        <span class="chip correct-answer">
-          {{ currentSubject.correctAnswers[i] }}
-        </span>
-      </div>
-    </div>
-  </div>
+        <!-- 입력답안 -->
+        <div class="toggle" @click="showCompareAnswer = !showCompareAnswer">
+          입력 답안 {{ showCompareAnswer ? '▲' : '▼' }}
+        </div>
 
-  <!-- 🔥 비교 시험 -->
-  <div v-if="isCompare && compareSubject" class="card">
-    <h4 class="card-title">{{ compareExam?.examName }}</h4>
+        <div v-if="showCompareAnswer" class="wrong-list">
+          <div class="wrong-header">
+            <span class="chip header-chip">번호</span>
+            <span class="chip header-chip">내 답</span>
+            <span class="chip header-chip">정답</span>
+          </div>
 
-    <div>점수: {{ compareSubject.score }} / {{ compareSubject.answers.length }}</div>
-    <div>정답: {{ compareStats.correct }}</div>
-    <div>오답: {{ compareStats.wrong }}</div>
-    <div>미응답: {{ compareStats.unanswered }}</div>
-    <div>정답률: {{ compareStats.accuracy }}%</div>
+          <div
+            v-for="(a, i) in compareSubject.answers"
+            :key="i"
+            class="wrong-item"
+          >
+            <span class="chip number-chip">{{ Number(i) + 1 }}</span>
 
-    <!-- 🔥 입력답안 (비교용 동일하게) -->
-    <div class="toggle" @click="showCompareAnswer = !showCompareAnswer">
-      입력 답안 {{ showCompareAnswer ? '▲' : '▼' }}
-    </div>
+            <span class="chip" :class="getStatus(a)">
+              {{ a.user_answer ?? '-' }}
+            </span>
 
-    <div v-if="showCompareAnswer" class="wrong-list">
-      <div class="wrong-header">
-        <span class="chip header-chip">번호</span>
-        <span class="chip header-chip">내 답</span>
-        <span class="chip header-chip">정답</span>
+            <span class="chip correct-answer">
+              {{ a.correct_answer }}
+            </span>
+          </div>
+        </div>
       </div>
 
-      <div
-        v-for="(ans, i) in compareSubject.answers"
-        :key="i"
-        class="wrong-item"
-      >
-        <span class="chip number-chip">{{ Number(i) + 1 }}</span>
-
-        <span
-          class="chip"
-          :class="getStatus(ans, compareSubject.correctAnswers[i])"
-        >
-          {{ ans || '-' }}
-        </span>
-
-        <span class="chip correct-answer">
-          {{ compareSubject.correctAnswers[i] }}
-        </span>
-      </div>
     </div>
-  </div>
 
-</div>
-
-    <!-- 🔥 비교 분석 -->
+    <!-- 비교 분석 -->
     <div v-if="isCompare" class="analysis">
 
       <div>
         <b>이전엔 맞았는데 이번에 틀린 문제</b>
         <div class="numbers">
-          <span v-for="n in regressed" :key="n" class="compare-regressed">{{ n }}</span>
+          <span v-for="n in regressed" :key="n" class="compare-regressed">
+            {{ n }}
+          </span>
         </div>
       </div>
 
       <div>
         <b>계속 틀린 문제</b>
         <div class="numbers">
-          <span v-for="n in stillWrong" :key="n" class="compare-still-wrong">{{ n }}</span>
+          <span v-for="n in stillWrong" :key="n" class="compare-still-wrong">
+            {{ n }}
+          </span>
         </div>
       </div>
 
@@ -149,136 +145,101 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useOmrStore } from '@/stores/omr'
+import api from '@/api/api'
 
-const store = useOmrStore()
 const route = useRoute()
 const router = useRouter()
-const showCompareAnswer = ref(false)
-// 🔥 핵심: ID로 조회
-const exam = computed(() =>
-  store.exams.find(e => e.examId === route.params.id)
-)
+
+const exam = ref<any>(null)
+const allExams = ref<any[]>([])
 
 const currentIndex = ref(0)
 const showAnswer = ref(false)
+const showCompareAnswer = ref(false)
+
+const selectedCompareExamId = ref<number | null>(null)
+const isCompare = ref(false)
+
+onMounted(async () => {
+  const examId = route.params.id
+
+  const res = await api.get(`/exams/${examId}/`)
+  exam.value = res.data
+
+  const listRes = await api.get('/exams/')
+  allExams.value = listRes.data
+})
 
 const currentSubject = computed(() => {
-  if (!exam.value) return null
+  if (!exam.value?.subjects) return null
   return exam.value.subjects[currentIndex.value]
 })
 
 const stats = computed(() => {
-  if (!currentSubject.value) return {
-    correct: 0, wrong: 0, unanswered: 0, accuracy: '0.0'
-  }
+  if (!currentSubject.value) return {}
 
   let correct = 0
   let wrong = 0
   let unanswered = 0
 
-  currentSubject.value.answers.forEach((ans: number, i: number) => {
-    const c = currentSubject.value.correctAnswers[i]
-
-    if (!ans) unanswered++
-    else if (ans === c) correct++
+  currentSubject.value.answers.forEach((a: any) => {
+    if (a.user_answer == null) unanswered++
+    else if (a.user_answer === a.correct_answer) correct++
     else wrong++
   })
+
+  const solved = correct + wrong
 
   return {
     correct,
     wrong,
     unanswered,
-    accuracy: ((correct / currentSubject.value.answers.length) * 100).toFixed(1)
+    solved,
+    accuracy: solved === 0 ? '0.0' : ((correct / solved) * 100).toFixed(1)
   }
 })
 
-// 🔥 flatMap으로 타입 문제 제거
-const wrongNumbers = computed(() => {
-  if (!currentSubject.value) return []
-  return currentSubject.value.answers.flatMap((ans: number, i: number) => {
-    const c = currentSubject.value.correctAnswers[i]
-    return ans && ans !== c ? [i + 1] : []
-  })
-})
-
-const unansweredNumbers = computed(() => {
-  if (!currentSubject.value) return []
-  return currentSubject.value.answers.flatMap((ans: number, i: number) => {
-    return !ans ? [i + 1] : []
-  })
-})
-
-const getStatus = (ans: number, correct: number) => {
-  if (!ans) return 'unanswered'
-  if (ans === correct) return 'correct'
+const getStatus = (a: any) => {
+  if (a.user_answer == null) return 'unanswered'
+  if (a.user_answer === a.correct_answer) return 'correct'
   return 'wrong'
-}
-
-const formatDate = (date: string) =>
-  new Date(date).toLocaleString()
-
-const goBack = () => router.push('/history')
-
-const selectedCompareExamId = ref('')
-const isCompare = ref(false)
-
-const isSameTemplate = (a: any, b: any) => {
-  if (!a.subjects || !b.subjects) return false
-
-  // 과목 개수 다르면 다른 템플릿
-  if (a.subjects.length !== b.subjects.length) return false
-
-  // 과목 이름 동일한지 확인
-  return a.subjects.every((s: any, i: number) =>
-    s.subjectName === b.subjects[i].subjectName
-  )
 }
 
 const sameExams = computed(() => {
   if (!exam.value) return []
 
-  return store.exams.filter(e =>
-    e.examId !== exam.value.examId &&
-    isSameTemplate(e, exam.value)
+  return allExams.value.filter(e =>
+    e.id !== exam.value.id &&
+    e.template_id &&
+    e.template_id === exam.value.template_id
   )
 })
 
 const compareExam = computed(() =>
-  store.exams.find(e => e.examId === selectedCompareExamId.value)
+  allExams.value.find(e => e.id === selectedCompareExamId.value)
 )
 
 const compareSubject = computed(() => {
   if (!compareExam.value || !currentSubject.value) return null
 
-  const subject = compareExam.value.subjects.find(
-    (s: any) => s.subjectName === currentSubject.value.subjectName
+  return compareExam.value.subjects?.find(
+    (s: any) => s.subject_name === currentSubject.value.subject_name
   )
-
-  return subject || null
 })
 
-const applyCompare = () => {
-  if (!selectedCompareExamId.value) return
-  isCompare.value = true
-}
-
 const compareStats = computed(() => {
-  if (!compareSubject.value) {
+  if (!compareSubject.value)
     return { correct: 0, wrong: 0, unanswered: 0, accuracy: '0.0' }
-  }
 
   let correct = 0
   let wrong = 0
   let unanswered = 0
 
-  compareSubject.value.answers.forEach((ans: number, i: number) => {
-    const c = compareSubject.value.correctAnswers[i]
-
-    if (!ans) unanswered++
-    else if (ans === c) correct++
+  compareSubject.value.answers.forEach((a: any) => {
+    if (a.user_answer == null) unanswered++
+    else if (a.user_answer === a.correct_answer) correct++
     else wrong++
   })
 
@@ -293,24 +254,36 @@ const compareStats = computed(() => {
 const regressed = computed(() => {
   if (!compareSubject.value || !currentSubject.value) return []
 
-  return currentSubject.value.answers.flatMap((ans: number, i: number) => {
+  return currentSubject.value.answers.flatMap((a: any, i: number) => {
     const prev = compareSubject.value.answers[i]
-    const c = currentSubject.value.correctAnswers[i]
-
-    return prev === c && ans !== c ? [i + 1] : []
+    return prev.user_answer === prev.correct_answer &&
+           a.user_answer !== a.correct_answer
+      ? [i + 1]
+      : []
   })
 })
 
 const stillWrong = computed(() => {
   if (!compareSubject.value || !currentSubject.value) return []
 
-  return currentSubject.value.answers.flatMap((ans: number, i: number) => {
+  return currentSubject.value.answers.flatMap((a: any, i: number) => {
     const prev = compareSubject.value.answers[i]
-    const c = currentSubject.value.correctAnswers[i]
-
-    return prev !== c && ans !== c ? [i + 1] : []
+    return prev.user_answer !== prev.correct_answer &&
+           a.user_answer !== a.correct_answer
+      ? [i + 1]
+      : []
   })
 })
+
+const applyCompare = () => {
+  if (!selectedCompareExamId.value) return
+  isCompare.value = true
+}
+
+const formatDate = (date: string) =>
+  new Date(date).toLocaleString()
+
+const goBack = () => router.push('/history')
 </script>
 
 <style scoped>
